@@ -2,8 +2,13 @@ import shlex
 
 import prompt
 
-from primitive_db.core import create_table, drop_table
-from primitive_db.utils import load_metadata, save_metadata
+from primitive_db.core import create_table, drop_table, insert
+from primitive_db.parser import parse_values
+from primitive_db.utils import (
+    load_metadata,
+    save_metadata,
+    save_table_data,
+)
 
 
 def welcome():
@@ -13,6 +18,7 @@ def welcome():
     print("  create_table <имя> <колонка:тип> ... — создать таблицу")
     print("  drop_table <имя> — удалить таблицу")
     print("  list_tables — показать список таблиц")
+    print("  insert into <имя> values (...) — добавить запись")
     print("  help — показать справку")
     print("  exit — выйти")
 
@@ -65,6 +71,27 @@ def run():
                 else:
                     for table_name in metadata:
                         print(f"  {table_name}")
+            elif action == "insert":
+                insert_parts = command.split(maxsplit=4)
+
+                if (
+                    len(insert_parts) != 5
+                    or insert_parts[1] != "into"
+                    or insert_parts[3] != "values"
+                ):
+                    raise ValueError(
+                        "Формат: insert into <имя> values (...)"
+                    )
+
+                table_name = insert_parts[2]
+                values = parse_values(insert_parts[4])
+                metadata = load_metadata("db_meta.json")
+                table_data = insert(metadata, table_name, values)
+                save_table_data(table_name, table_data)
+                print(
+                    f"Запись добавлена в '{table_name}', "
+                    f"ID: {table_data[-1]['ID']}."
+                )
             else:
                 print("Неизвестная команда. Введите help.")
         except ValueError as error:

@@ -1,3 +1,5 @@
+from primitive_db.utils import load_table_data
+
 VALID_TYPES = {"int", "str", "bool"}
 
 
@@ -45,3 +47,34 @@ def drop_table(metadata, table_name):
 
     del metadata[table_name]
     return metadata
+
+
+def insert(metadata, table_name, values):
+    """Добавить запись с проверкой типов и автоматическим ID."""
+    if table_name not in metadata:
+        raise ValueError(f"Таблица '{table_name}' не существует.")
+
+    columns = metadata[table_name][1:]
+
+    if len(values) != len(columns):
+        raise ValueError(f"Ожидается значений: {len(columns)}.")
+
+    types = {"int": int, "str": str, "bool": bool}
+    record = {}
+
+    for column, value in zip(columns, values):
+        name, column_type = column.split(":")
+
+        if type(value) is not types[column_type]:
+            raise ValueError(
+                f"Колонка '{name}' ожидает тип '{column_type}'."
+            )
+
+        record[name] = value
+
+    table_data = load_table_data(table_name)
+    next_id = max((row["ID"] for row in table_data), default=0) + 1
+    record = {"ID": next_id, **record}
+    table_data.append(record)
+
+    return table_data
