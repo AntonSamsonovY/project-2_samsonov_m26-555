@@ -11,6 +11,7 @@ def welcome():
     print("Примитивная база данных")
     print("Команды:")
     print("  create_table <имя> <колонка:тип> ... — создать таблицу")
+    print("  list_tables — показать список таблиц")
     print("  help — показать справку")
     print("  exit — выйти")
 
@@ -47,6 +48,14 @@ def run():
                 create_table(metadata, parts[1], parts[2:])
                 save_metadata("db_meta.json", metadata)
                 print(f"Таблица '{parts[1]}' создана.")
+            elif action == "list_tables":
+                metadata = load_metadata("db_meta.json")
+
+                if not metadata:
+                    print("Таблиц пока нет.")
+                else:
+                    for table_name in metadata:
+                        print(f"  {table_name}")
             else:
                 print("Неизвестная команда. Введите help.")
         except ValueError as error:
