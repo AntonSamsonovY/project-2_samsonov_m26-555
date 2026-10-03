@@ -36,3 +36,12 @@ def create_table(metadata, table_name, columns):
 
     metadata[table_name] = schema
     return metadata
+
+
+def drop_table(metadata, table_name):
+    """Удалить описание существующей таблицы."""
+    if table_name not in metadata:
+        raise ValueError(f"Таблица '{table_name}' не существует.")
+
+    del metadata[table_name]
+    return metadata

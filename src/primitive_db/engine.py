@@ -2,7 +2,7 @@ import shlex
 
 import prompt
 
-from primitive_db.core import create_table
+from primitive_db.core import create_table, drop_table
 from primitive_db.utils import load_metadata, save_metadata
 
 
@@ -11,6 +11,7 @@ def welcome():
     print("Примитивная база данных")
     print("Команды:")
     print("  create_table <имя> <колонка:тип> ... — создать таблицу")
+    print("  drop_table <имя> — удалить таблицу")
     print("  list_tables — показать список таблиц")
     print("  help — показать справку")
     print("  exit — выйти")
@@ -48,6 +49,14 @@ def run():
                 create_table(metadata, parts[1], parts[2:])
                 save_metadata("db_meta.json", metadata)
                 print(f"Таблица '{parts[1]}' создана.")
+            elif action == "drop_table":
+                if len(parts) != 2:
+                    raise ValueError("Формат: drop_table <имя>")
+
+                metadata = load_metadata("db_meta.json")
+                drop_table(metadata, parts[1])
+                save_metadata("db_meta.json", metadata)
+                print(f"Таблица '{parts[1]}' удалена.")
             elif action == "list_tables":
                 metadata = load_metadata("db_meta.json")
 
