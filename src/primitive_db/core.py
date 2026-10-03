@@ -78,3 +78,18 @@ def insert(metadata, table_name, values):
     table_data.append(record)
 
     return table_data
+
+
+def select(table_data, where_clause=None):
+    """Выбрать все записи или записи по условию равенства."""
+    if where_clause is None:
+        return table_data.copy()
+
+    return [
+        row
+        for row in table_data
+        if all(
+            row.get(column) == value
+            for column, value in where_clause.items()
+        )
+    ]

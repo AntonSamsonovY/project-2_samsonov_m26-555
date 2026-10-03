@@ -1,11 +1,13 @@
 import shlex
 
 import prompt
+from prettytable import PrettyTable
 
-from primitive_db.core import create_table, drop_table, insert
-from primitive_db.parser import parse_values
+from primitive_db.core import create_table, drop_table, insert, select
+from primitive_db.parser import parse_condition, parse_values
 from primitive_db.utils import (
     load_metadata,
+    load_table_data,
     save_metadata,
     save_table_data,
 )
@@ -19,6 +21,7 @@ def welcome():
     print("  drop_table <имя> — удалить таблицу")
     print("  list_tables — показать список таблиц")
     print("  insert into <имя> values (...) — добавить запись")
+    print("  select from <имя> [where колонка = значение] — показать записи")
     print("  help — показать справку")
     print("  exit — выйти")
 
@@ -92,6 +95,57 @@ def run():
                     f"Запись добавлена в '{table_name}', "
                     f"ID: {table_data[-1]['ID']}."
                 )
+            elif action == "select":
+                select_parts = command.split(maxsplit=3)
+
+                if len(select_parts) < 3 or select_parts[1] != "from":
+                    raise ValueError(
+                        "Формат: select from <имя> "
+                        "[where колонка = значение]"
+                    )
+
+                table_name = select_parts[2]
+                metadata = load_metadata("db_meta.json")
+
+                if table_name not in metadata:
+                    raise ValueError(
+                        f"Таблица '{table_name}' не существует."
+                    )
+
+                column_names = [
+                    column.split(":")[0]
+                    for column in metadata[table_name]
+                ]
+                where_clause = None
+
+                if len(select_parts) == 4:
+                    condition_parts = select_parts[3].split(maxsplit=1)
+
+                    if (
+                        len(condition_parts) != 2
+                        or condition_parts[0] != "where"
+                    ):
+                        raise ValueError(
+                            "Формат условия: where колонка = значение"
+                        )
+
+                    where_clause = parse_condition(condition_parts[1])
+
+                    for column in where_clause:
+                        if column not in column_names:
+                            raise ValueError(
+                                f"Колонка '{column}' не существует."
+                            )
+
+                table_data = load_table_data(table_name)
+                rows = select(table_data, where_clause)
+                table = PrettyTable()
+                table.field_names = column_names
+
+                for row in rows:
+                    table.add_row([row[column] for column in column_names])
+
+                print(table)
             else:
                 print("Неизвестная команда. Введите help.")
         except ValueError as error:
