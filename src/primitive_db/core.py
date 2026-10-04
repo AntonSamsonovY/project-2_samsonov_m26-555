@@ -93,3 +93,21 @@ def select(table_data, where_clause=None):
             for column, value in where_clause.items()
         )
     ]
+
+
+def update(table_data, set_clause, where_clause):
+    """Изменить записи, соответствующие условию."""
+    if not set_clause or not where_clause:
+        raise ValueError("Укажите изменения и условие.")
+
+    if "ID" in set_clause:
+        raise ValueError("Изменять ID нельзя.")
+
+    for row in table_data:
+        if all(
+            row.get(column) == value
+            for column, value in where_clause.items()
+        ):
+            row.update(set_clause)
+
+    return table_data

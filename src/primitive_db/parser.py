@@ -40,3 +40,7 @@ def parse_condition(text):
         raise ValueError("В условии должно быть одно значение.")
 
     return {column: values[0]}
+
+def parse_set_clause(text):
+    """Разобрать изменение вида колонка = значение."""
+    return parse_condition(text)
