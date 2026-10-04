@@ -7,6 +7,7 @@ from primitive_db.core import (
     create_table,
     delete,
     drop_table,
+    info,
     insert,
     select,
     update,
@@ -37,6 +38,7 @@ def welcome():
     print("  help — показать справку")
     print("  exit — выйти")
     print("  delete from <имя> where условие — удалить записи")
+    print("  info <имя> — показать информацию о таблице")
 
 
 def handle_update(command):
@@ -244,7 +246,23 @@ def run():
             elif action == "update":
                 handle_update(command)
             elif action == "delete":
-                handle_delete(command)   
+                handle_delete(command) 
+            elif action == "info":
+                if len(parts) != 2:
+                    raise ValueError("Формат: info <имя>")
+
+                metadata = load_metadata("db_meta.json")
+                table_info = info(metadata, parts[1])
+
+                print(f"Таблица: {table_info['name']}")
+                print("Колонки:")
+
+                for column in table_info["columns"]:
+                    name, column_type = column.split(":")
+                    print(f"  {name}: {column_type}")
+
+                print(f"Количество записей: {table_info['row_count']}")    
+
             else:
                 print("Неизвестная команда. Введите help.")
         except ValueError as error:

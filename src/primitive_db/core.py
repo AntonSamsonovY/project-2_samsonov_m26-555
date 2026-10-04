@@ -126,3 +126,17 @@ def delete(table_data, where_clause):
             for column, value in where_clause.items()
         )
     ]
+
+
+def info(metadata, table_name):
+    """Получить описание таблицы и количество записей."""
+    if table_name not in metadata:
+        raise ValueError(f"Таблица '{table_name}' не существует.")
+
+    table_data = load_table_data(table_name)
+
+    return {
+        "name": table_name,
+        "columns": metadata[table_name],
+        "row_count": len(table_data),
+    }
