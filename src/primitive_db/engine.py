@@ -80,6 +80,9 @@ def handle_update(command):
 
     table_data = load_table_data(table_name)
     updated_data = update(table_data, set_clause, where_clause)
+    if updated_data is None:
+        return
+
     save_table_data(table_name, updated_data)
     print("Команда изменения выполнена.")
 
@@ -154,8 +157,11 @@ def run():
                     )
 
                 metadata = load_metadata(METADATA_FILE)
-                create_table(metadata, parts[1], parts[2:])
-                save_metadata(METADATA_FILE, metadata)
+                result = create_table(metadata, parts[1], parts[2:])
+                if result is None:
+                    continue
+
+                save_metadata(METADATA_FILE, result)
                 print(f"Таблица '{parts[1]}' создана.")
             elif action == "drop_table":
                 if len(parts) != 2:
@@ -190,6 +196,9 @@ def run():
                 values = parse_values(insert_parts[4])
                 metadata = load_metadata(METADATA_FILE)
                 table_data = insert(metadata, table_name, values)
+                if table_data is None:
+                    continue
+
                 save_table_data(table_name, table_data)
                 print(
                     f"Запись добавлена в '{table_name}', "
@@ -239,6 +248,9 @@ def run():
 
                 table_data = load_table_data(table_name)
                 rows = select(table_data, where_clause)
+                if rows is None:
+                    continue
+
                 table = PrettyTable()
                 table.field_names = column_names
 
@@ -256,6 +268,8 @@ def run():
 
                 metadata = load_metadata(METADATA_FILE)
                 table_info = info(metadata, parts[1])
+                if table_info is None:
+                    continue
 
                 print(f"Таблица: {table_info['name']}")
                 print("Колонки:")

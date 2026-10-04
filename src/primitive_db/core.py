@@ -1,8 +1,9 @@
 from primitive_db.constants import TYPE_MAP, VALID_TYPES
-from primitive_db.decorators import confirm_action, log_time
+from primitive_db.decorators import confirm_action, handle_db_errors, log_time
 from primitive_db.utils import load_table_data
 
 
+@handle_db_errors
 def create_table(metadata, table_name, columns):
     """Добавить описание новой таблицы в метаданные."""
     if not table_name.isidentifier():
@@ -40,6 +41,7 @@ def create_table(metadata, table_name, columns):
     return metadata
 
 
+@handle_db_errors
 @confirm_action("удаление таблицы")
 def drop_table(metadata, table_name):
     """Удалить описание существующей таблицы."""
@@ -50,6 +52,7 @@ def drop_table(metadata, table_name):
     return metadata
 
 
+@handle_db_errors
 @log_time
 def insert(metadata, table_name, values):
     """Добавить запись с проверкой типов и автоматическим ID."""
@@ -81,6 +84,7 @@ def insert(metadata, table_name, values):
     return table_data
 
 
+@handle_db_errors
 @log_time
 def select(table_data, where_clause=None):
     """Выбрать все записи или записи по условию равенства."""
@@ -97,6 +101,7 @@ def select(table_data, where_clause=None):
     ]
 
 
+@handle_db_errors
 def update(table_data, set_clause, where_clause):
     """Изменить записи, соответствующие условию."""
     if not set_clause or not where_clause:
@@ -115,6 +120,7 @@ def update(table_data, set_clause, where_clause):
     return table_data
 
 
+@handle_db_errors
 @confirm_action("удаление записей")
 def delete(table_data, where_clause):
     """Вернуть записи, не соответствующие условию удаления."""
@@ -131,6 +137,7 @@ def delete(table_data, where_clause):
     ]
 
 
+@handle_db_errors
 def info(metadata, table_name):
     """Получить описание таблицы и количество записей."""
     if table_name not in metadata:
