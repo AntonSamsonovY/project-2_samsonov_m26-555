@@ -1,5 +1,5 @@
 from primitive_db.constants import TYPE_MAP, VALID_TYPES
-from primitive_db.decorators import confirm_action
+from primitive_db.decorators import confirm_action, log_time
 from primitive_db.utils import load_table_data
 
 
@@ -50,6 +50,7 @@ def drop_table(metadata, table_name):
     return metadata
 
 
+@log_time
 def insert(metadata, table_name, values):
     """Добавить запись с проверкой типов и автоматическим ID."""
     if table_name not in metadata:
@@ -80,6 +81,7 @@ def insert(metadata, table_name, values):
     return table_data
 
 
+@log_time
 def select(table_data, where_clause=None):
     """Выбрать все записи или записи по условию равенства."""
     if where_clause is None:
