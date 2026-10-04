@@ -117,6 +117,9 @@ def handle_delete(command):
 
     table_data = load_table_data(table_name)
     remaining_data = delete(table_data, where_clause)
+    if remaining_data is None:
+        return
+
     deleted_count = len(table_data) - len(remaining_data)
     save_table_data(table_name, remaining_data)
     print(f"Удалено записей: {deleted_count}.")
@@ -159,9 +162,10 @@ def run():
                     raise ValueError("Формат: drop_table <имя>")
 
                 metadata = load_metadata(METADATA_FILE)
-                drop_table(metadata, parts[1])
-                save_metadata(METADATA_FILE, metadata)
-                print(f"Таблица '{parts[1]}' удалена.")
+                result = drop_table(metadata, parts[1])
+                if result is not None:
+                    save_metadata(METADATA_FILE, result)
+                    print(f"Таблица '{parts[1]}' удалена.")
             elif action == "list_tables":
                 metadata = load_metadata(METADATA_FILE)
 
