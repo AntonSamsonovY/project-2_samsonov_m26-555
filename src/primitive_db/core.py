@@ -1,6 +1,5 @@
+from primitive_db.constants import TYPE_MAP, VALID_TYPES
 from primitive_db.utils import load_table_data
-
-VALID_TYPES = {"int", "str", "bool"}
 
 
 def create_table(metadata, table_name, columns):
@@ -59,13 +58,12 @@ def insert(metadata, table_name, values):
     if len(values) != len(columns):
         raise ValueError(f"Ожидается значений: {len(columns)}.")
 
-    types = {"int": int, "str": str, "bool": bool}
     record = {}
 
     for column, value in zip(columns, values):
         name, column_type = column.split(":")
 
-        if type(value) is not types[column_type]:
+        if type(value) is not TYPE_MAP[column_type]:
             raise ValueError(
                 f"Колонка '{name}' ожидает тип '{column_type}'."
             )
