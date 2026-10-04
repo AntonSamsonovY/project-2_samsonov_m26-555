@@ -13,6 +13,7 @@ from primitive_db.core import (
     select,
     update,
 )
+from primitive_db.decorators import create_cacher
 from primitive_db.parser import (
     parse_condition,
     parse_set_clause,
@@ -24,6 +25,8 @@ from primitive_db.utils import (
     save_metadata,
     save_table_data,
 )
+
+cache_result = create_cacher()
 
 
 def welcome():
@@ -84,6 +87,7 @@ def handle_update(command):
         return
 
     save_table_data(table_name, updated_data)
+    cache_result.clear()
     print("Команда изменения выполнена.")
 
 
@@ -125,11 +129,13 @@ def handle_delete(command):
 
     deleted_count = len(table_data) - len(remaining_data)
     save_table_data(table_name, remaining_data)
+    cache_result.clear()
     print(f"Удалено записей: {deleted_count}.")
 
 
 def run():
     """Запустить цикл ввода команд."""
+    cache_result.clear()
     welcome()
 
     while True:
@@ -162,6 +168,7 @@ def run():
                     continue
 
                 save_metadata(METADATA_FILE, result)
+                cache_result.clear()
                 print(f"Таблица '{parts[1]}' создана.")
             elif action == "drop_table":
                 if len(parts) != 2:
@@ -171,6 +178,7 @@ def run():
                 result = drop_table(metadata, parts[1])
                 if result is not None:
                     save_metadata(METADATA_FILE, result)
+                    cache_result.clear()
                     print(f"Таблица '{parts[1]}' удалена.")
             elif action == "list_tables":
                 metadata = load_metadata(METADATA_FILE)
@@ -200,6 +208,7 @@ def run():
                     continue
 
                 save_table_data(table_name, table_data)
+                cache_result.clear()
                 print(
                     f"Запись добавлена в '{table_name}', "
                     f"ID: {table_data[-1]['ID']}."
@@ -246,8 +255,15 @@ def run():
                                 f"Колонка '{column}' не существует."
                             )
 
-                table_data = load_table_data(table_name)
-                rows = select(table_data, where_clause)
+                condition_key = tuple(
+                    (column, type(value).__name__, value)
+                    for column, value in sorted((where_clause or {}).items())
+                )
+                key = (table_name, condition_key)
+                rows = cache_result(
+                    key,
+                    lambda: select(load_table_data(table_name), where_clause),
+                )
                 if rows is None:
                     continue
 

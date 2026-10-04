@@ -1,7 +1,32 @@
 import time
+from copy import deepcopy
 from functools import wraps
 
 import prompt
+
+
+def create_cacher():
+    """Создать замыкание для хранения результатов и очистки кеша."""
+    cache = {}
+
+    def cache_result(key, value_func):
+        """Вычислить результат один раз; ошибки не кешировать."""
+        if key in cache:
+            print("Результат получен из кеша.")
+            return deepcopy(cache[key])
+
+        result = value_func()
+        if result is not None:
+            cache[key] = deepcopy(result)
+
+        return result
+
+    def clear_cache():
+        """Сбросить результаты после изменения данных."""
+        cache.clear()
+
+    cache_result.clear = clear_cache
+    return cache_result
 
 
 def handle_db_errors(func):
