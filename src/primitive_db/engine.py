@@ -3,6 +3,7 @@ import shlex
 import prompt
 from prettytable import PrettyTable
 
+from primitive_db.constants import METADATA_FILE, TYPE_MAP
 from primitive_db.core import (
     create_table,
     delete,
@@ -35,10 +36,10 @@ def welcome():
     print("  insert into <имя> values (...) — добавить запись")
     print("  select from <имя> [where колонка = значение] — показать записи")
     print("  update <имя> set колонка = значение where условие — изменить записи")
-    print("  help — показать справку")
-    print("  exit — выйти")
     print("  delete from <имя> where условие — удалить записи")
     print("  info <имя> — показать информацию о таблице")
+    print("  help — показать справку")
+    print("  exit — выйти")
 
 
 def handle_update(command):
@@ -60,20 +61,19 @@ def handle_update(command):
     set_clause = parse_set_clause(" ".join(parts[3:where_index]))
     where_clause = parse_condition(" ".join(parts[where_index + 1:]))
 
-    metadata = load_metadata("db_meta.json")
+    metadata = load_metadata(METADATA_FILE)
 
     if table_name not in metadata:
         raise ValueError(f"Таблица '{table_name}' не существует.")
 
     schema = dict(column.split(":") for column in metadata[table_name])
-    types = {"int": int, "str": str, "bool": bool}
 
     for clause in (set_clause, where_clause):
         for column, value in clause.items():
             if column not in schema:
                 raise ValueError(f"Колонка '{column}' не существует.")
 
-            if type(value) is not types[schema[column]]:
+            if type(value) is not TYPE_MAP[schema[column]]:
                 raise ValueError(
                     f"Колонка '{column}' ожидает тип '{schema[column]}'."
                 )
@@ -99,19 +99,18 @@ def handle_delete(command):
 
     table_name = parts[2]
     where_clause = parse_condition(parts[4])
-    metadata = load_metadata("db_meta.json")
+    metadata = load_metadata(METADATA_FILE)
 
     if table_name not in metadata:
         raise ValueError(f"Таблица '{table_name}' не существует.")
 
     schema = dict(column.split(":") for column in metadata[table_name])
-    types = {"int": int, "str": str, "bool": bool}
 
     for column, value in where_clause.items():
         if column not in schema:
             raise ValueError(f"Колонка '{column}' не существует.")
 
-        if type(value) is not types[schema[column]]:
+        if type(value) is not TYPE_MAP[schema[column]]:
             raise ValueError(
                 f"Колонка '{column}' ожидает тип '{schema[column]}'."
             )
@@ -151,20 +150,20 @@ def run():
                         "Формат: create_table <имя> <колонка:тип> ..."
                     )
 
-                metadata = load_metadata("db_meta.json")
+                metadata = load_metadata(METADATA_FILE)
                 create_table(metadata, parts[1], parts[2:])
-                save_metadata("db_meta.json", metadata)
+                save_metadata(METADATA_FILE, metadata)
                 print(f"Таблица '{parts[1]}' создана.")
             elif action == "drop_table":
                 if len(parts) != 2:
                     raise ValueError("Формат: drop_table <имя>")
 
-                metadata = load_metadata("db_meta.json")
+                metadata = load_metadata(METADATA_FILE)
                 drop_table(metadata, parts[1])
-                save_metadata("db_meta.json", metadata)
+                save_metadata(METADATA_FILE, metadata)
                 print(f"Таблица '{parts[1]}' удалена.")
             elif action == "list_tables":
-                metadata = load_metadata("db_meta.json")
+                metadata = load_metadata(METADATA_FILE)
 
                 if not metadata:
                     print("Таблиц пока нет.")
@@ -185,7 +184,7 @@ def run():
 
                 table_name = insert_parts[2]
                 values = parse_values(insert_parts[4])
-                metadata = load_metadata("db_meta.json")
+                metadata = load_metadata(METADATA_FILE)
                 table_data = insert(metadata, table_name, values)
                 save_table_data(table_name, table_data)
                 print(
@@ -202,7 +201,7 @@ def run():
                     )
 
                 table_name = select_parts[2]
-                metadata = load_metadata("db_meta.json")
+                metadata = load_metadata(METADATA_FILE)
 
                 if table_name not in metadata:
                     raise ValueError(
@@ -246,12 +245,12 @@ def run():
             elif action == "update":
                 handle_update(command)
             elif action == "delete":
-                handle_delete(command) 
+                handle_delete(command)
             elif action == "info":
                 if len(parts) != 2:
                     raise ValueError("Формат: info <имя>")
 
-                metadata = load_metadata("db_meta.json")
+                metadata = load_metadata(METADATA_FILE)
                 table_info = info(metadata, parts[1])
 
                 print(f"Таблица: {table_info['name']}")
@@ -261,8 +260,7 @@ def run():
                     name, column_type = column.split(":")
                     print(f"  {name}: {column_type}")
 
-                print(f"Количество записей: {table_info['row_count']}")    
-
+                print(f"Количество записей: {table_info['row_count']}")
             else:
                 print("Неизвестная команда. Введите help.")
         except ValueError as error:
