@@ -30,6 +30,18 @@ def load_table_data(table_name):
         return []
 
 
+def delete_table_data(table_name):
+    """Удалить файл записей таблицы, если он существует."""
+    if not table_name.isidentifier():
+        raise ValueError("Некорректное имя таблицы.")
+
+    filepath = os.path.join(DATA_DIR, f"{table_name}.json")
+    try:
+        os.remove(filepath)
+    except FileNotFoundError:
+        pass
+
+
 def save_table_data(table_name, data):
     """Сохранить записи таблицы в JSON-файле."""
     os.makedirs(DATA_DIR, exist_ok=True)

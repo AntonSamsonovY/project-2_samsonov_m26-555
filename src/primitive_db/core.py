@@ -1,6 +1,6 @@
 from primitive_db.constants import TYPE_MAP, VALID_TYPES
 from primitive_db.decorators import confirm_action, handle_db_errors, log_time
-from primitive_db.utils import load_table_data
+from primitive_db.utils import delete_table_data, load_table_data
 
 
 @handle_db_errors
@@ -44,10 +44,11 @@ def create_table(metadata, table_name, columns):
 @handle_db_errors
 @confirm_action("удаление таблицы")
 def drop_table(metadata, table_name):
-    """Удалить описание существующей таблицы."""
+    """Удалить файл записей и описание существующей таблицы."""
     if table_name not in metadata:
         raise ValueError(f"Таблица '{table_name}' не существует.")
 
+    delete_table_data(table_name)
     del metadata[table_name]
     return metadata
 
@@ -70,9 +71,7 @@ def insert(metadata, table_name, values):
         name, column_type = column.split(":")
 
         if type(value) is not TYPE_MAP[column_type]:
-            raise ValueError(
-                f"Колонка '{name}' ожидает тип '{column_type}'."
-            )
+            raise ValueError(f"Колонка '{name}' ожидает тип '{column_type}'.")
 
         record[name] = value
 
@@ -94,10 +93,7 @@ def select(table_data, where_clause=None):
     return [
         row
         for row in table_data
-        if all(
-            row.get(column) == value
-            for column, value in where_clause.items()
-        )
+        if all(row.get(column) == value for column, value in where_clause.items())
     ]
 
 
@@ -111,10 +107,7 @@ def update(table_data, set_clause, where_clause):
         raise ValueError("Изменять ID нельзя.")
 
     for row in table_data:
-        if all(
-            row.get(column) == value
-            for column, value in where_clause.items()
-        ):
+        if all(row.get(column) == value for column, value in where_clause.items()):
             row.update(set_clause)
 
     return table_data
@@ -130,10 +123,7 @@ def delete(table_data, where_clause):
     return [
         row
         for row in table_data
-        if not all(
-            row.get(column) == value
-            for column, value in where_clause.items()
-        )
+        if not all(row.get(column) == value for column, value in where_clause.items())
     ]
 
 

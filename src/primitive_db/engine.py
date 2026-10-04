@@ -51,8 +51,7 @@ def handle_update(command):
 
     if len(parts) < 4 or parts[2] != "set":
         raise ValueError(
-            "Формат: update <имя> set колонка = значение "
-            "where колонка = значение"
+            "Формат: update <имя> set колонка = значение where колонка = значение"
         )
 
     try:
@@ -62,7 +61,7 @@ def handle_update(command):
 
     table_name = parts[1]
     set_clause = parse_set_clause(" ".join(parts[3:where_index]))
-    where_clause = parse_condition(" ".join(parts[where_index + 1:]))
+    where_clause = parse_condition(" ".join(parts[where_index + 1 :]))
 
     metadata = load_metadata(METADATA_FILE)
 
@@ -77,9 +76,7 @@ def handle_update(command):
                 raise ValueError(f"Колонка '{column}' не существует.")
 
             if type(value) is not TYPE_MAP[schema[column]]:
-                raise ValueError(
-                    f"Колонка '{column}' ожидает тип '{schema[column]}'."
-                )
+                raise ValueError(f"Колонка '{column}' ожидает тип '{schema[column]}'.")
 
     table_data = load_table_data(table_name)
     updated_data = update(table_data, set_clause, where_clause)
@@ -95,14 +92,8 @@ def handle_delete(command):
     """Проверить условие удаления и сохранить оставшиеся записи."""
     parts = command.split(maxsplit=4)
 
-    if (
-        len(parts) != 5
-        or parts[1] != "from"
-        or parts[3] != "where"
-    ):
-        raise ValueError(
-            "Формат: delete from <имя> where колонка = значение"
-        )
+    if len(parts) != 5 or parts[1] != "from" or parts[3] != "where":
+        raise ValueError("Формат: delete from <имя> where колонка = значение")
 
     table_name = parts[2]
     where_clause = parse_condition(parts[4])
@@ -118,9 +109,7 @@ def handle_delete(command):
             raise ValueError(f"Колонка '{column}' не существует.")
 
         if type(value) is not TYPE_MAP[schema[column]]:
-            raise ValueError(
-                f"Колонка '{column}' ожидает тип '{schema[column]}'."
-            )
+            raise ValueError(f"Колонка '{column}' ожидает тип '{schema[column]}'.")
 
     table_data = load_table_data(table_name)
     remaining_data = delete(table_data, where_clause)
@@ -158,9 +147,7 @@ def run():
                 welcome()
             elif action == "create_table":
                 if len(parts) < 3:
-                    raise ValueError(
-                        "Формат: create_table <имя> <колонка:тип> ..."
-                    )
+                    raise ValueError("Формат: create_table <имя> <колонка:тип> ...")
 
                 metadata = load_metadata(METADATA_FILE)
                 result = create_table(metadata, parts[1], parts[2:])
@@ -196,9 +183,7 @@ def run():
                     or insert_parts[1] != "into"
                     or insert_parts[3] != "values"
                 ):
-                    raise ValueError(
-                        "Формат: insert into <имя> values (...)"
-                    )
+                    raise ValueError("Формат: insert into <имя> values (...)")
 
                 table_name = insert_parts[2]
                 values = parse_values(insert_parts[4])
@@ -209,50 +194,40 @@ def run():
 
                 save_table_data(table_name, table_data)
                 cache_result.clear()
-                print(
-                    f"Запись добавлена в '{table_name}', "
-                    f"ID: {table_data[-1]['ID']}."
-                )
+                print(f"Запись добавлена в '{table_name}', ID: {table_data[-1]['ID']}.")
             elif action == "select":
                 select_parts = command.split(maxsplit=3)
 
                 if len(select_parts) < 3 or select_parts[1] != "from":
                     raise ValueError(
-                        "Формат: select from <имя> "
-                        "[where колонка = значение]"
+                        "Формат: select from <имя> [where колонка = значение]"
                     )
 
                 table_name = select_parts[2]
                 metadata = load_metadata(METADATA_FILE)
 
                 if table_name not in metadata:
-                    raise ValueError(
-                        f"Таблица '{table_name}' не существует."
-                    )
+                    raise ValueError(f"Таблица '{table_name}' не существует.")
 
-                column_names = [
-                    column.split(":")[0]
-                    for column in metadata[table_name]
-                ]
+                schema = dict(column.split(":") for column in metadata[table_name])
+                column_names = list(schema)
                 where_clause = None
 
                 if len(select_parts) == 4:
                     condition_parts = select_parts[3].split(maxsplit=1)
 
-                    if (
-                        len(condition_parts) != 2
-                        or condition_parts[0] != "where"
-                    ):
-                        raise ValueError(
-                            "Формат условия: where колонка = значение"
-                        )
+                    if len(condition_parts) != 2 or condition_parts[0] != "where":
+                        raise ValueError("Формат условия: where колонка = значение")
 
                     where_clause = parse_condition(condition_parts[1])
 
-                    for column in where_clause:
-                        if column not in column_names:
+                    for column, value in where_clause.items():
+                        if column not in schema:
+                            raise ValueError(f"Колонка '{column}' не существует.")
+
+                        if type(value) is not TYPE_MAP[schema[column]]:
                             raise ValueError(
-                                f"Колонка '{column}' не существует."
+                                f"Колонка '{column}' ожидает тип '{schema[column]}'."
                             )
 
                 condition_key = tuple(

@@ -21,6 +21,7 @@ def parse_values(text):
 
     return values
 
+
 def parse_condition(text):
     """Разобрать условие вида колонка = значение."""
     parts = text.split("=", maxsplit=1)
@@ -40,6 +41,7 @@ def parse_condition(text):
         raise ValueError("В условии должно быть одно значение.")
 
     return {column: values[0]}
+
 
 def parse_set_clause(text):
     """Разобрать изменение вида колонка = значение."""
