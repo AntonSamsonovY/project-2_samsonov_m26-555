@@ -3,7 +3,14 @@ import shlex
 import prompt
 from prettytable import PrettyTable
 
-from primitive_db.core import create_table, drop_table, insert, select, update
+from primitive_db.core import (
+    create_table,
+    delete,
+    drop_table,
+    insert,
+    select,
+    update,
+)
 from primitive_db.parser import (
     parse_condition,
     parse_set_clause,
@@ -29,6 +36,7 @@ def welcome():
     print("  update <имя> set колонка = значение where условие — изменить записи")
     print("  help — показать справку")
     print("  exit — выйти")
+    print("  delete from <имя> where условие — удалить записи")
 
 
 def handle_update(command):
@@ -72,6 +80,45 @@ def handle_update(command):
     updated_data = update(table_data, set_clause, where_clause)
     save_table_data(table_name, updated_data)
     print("Команда изменения выполнена.")
+
+
+def handle_delete(command):
+    """Проверить условие удаления и сохранить оставшиеся записи."""
+    parts = command.split(maxsplit=4)
+
+    if (
+        len(parts) != 5
+        or parts[1] != "from"
+        or parts[3] != "where"
+    ):
+        raise ValueError(
+            "Формат: delete from <имя> where колонка = значение"
+        )
+
+    table_name = parts[2]
+    where_clause = parse_condition(parts[4])
+    metadata = load_metadata("db_meta.json")
+
+    if table_name not in metadata:
+        raise ValueError(f"Таблица '{table_name}' не существует.")
+
+    schema = dict(column.split(":") for column in metadata[table_name])
+    types = {"int": int, "str": str, "bool": bool}
+
+    for column, value in where_clause.items():
+        if column not in schema:
+            raise ValueError(f"Колонка '{column}' не существует.")
+
+        if type(value) is not types[schema[column]]:
+            raise ValueError(
+                f"Колонка '{column}' ожидает тип '{schema[column]}'."
+            )
+
+    table_data = load_table_data(table_name)
+    remaining_data = delete(table_data, where_clause)
+    deleted_count = len(table_data) - len(remaining_data)
+    save_table_data(table_name, remaining_data)
+    print(f"Удалено записей: {deleted_count}.")
 
 
 def run():
@@ -196,6 +243,8 @@ def run():
                 print(table)
             elif action == "update":
                 handle_update(command)
+            elif action == "delete":
+                handle_delete(command)   
             else:
                 print("Неизвестная команда. Введите help.")
         except ValueError as error:

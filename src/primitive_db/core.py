@@ -111,3 +111,18 @@ def update(table_data, set_clause, where_clause):
             row.update(set_clause)
 
     return table_data
+
+
+def delete(table_data, where_clause):
+    """Вернуть записи, не соответствующие условию удаления."""
+    if not where_clause:
+        raise ValueError("Для удаления обязательно условие.")
+
+    return [
+        row
+        for row in table_data
+        if not all(
+            row.get(column) == value
+            for column, value in where_clause.items()
+        )
+    ]
